@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pickle
 import random as rand
 from tqdm import tqdm
+from torch.utils.data import Dataset
 
 
 def get_video_list():
@@ -66,12 +67,32 @@ def get_mean_std():
     return video_mean, video_std
 
 
-def generate_training_example(N: int, video_list: list):
+def generate_training_example(N: int, video, num_per_video: int, folder: str):
     """
     :param N: number of frames for training
-    :param video_list: list of videos to choose from
+    :param video: list of videos to choose from or specific one
     :return: N normalised consecutive frames from random time in random video
     """
+    arr = None
+
+    if type(video) == list:
+        video_choice = rand.choice(video)
+    else:
+        video_choice = video
+    video_arr = array_from_video(video_choice)
+    video_arr = np.array(video_arr[:, 15:-25, 165:475, 0], dtype=np.float)
+    video_len = video_arr.shape[0]
+    video_arr -= mean
+    video_arr /= std
+
+    for i in range(num_per_video):
+        N0 = rand.randint(1, video_len - N - 1)
+        arr = video_arr[N0:N0 + N]
+        fname = str(hash(video_choice))[1:] + "_" + str(i)
+        with open(os.path.join("./files/", folder, fname), "wb") as f:
+            pickle.dump(arr, f)
+
+    return arr  # returns last arr
 
 
 if __name__ == "__main__":
@@ -84,7 +105,16 @@ if __name__ == "__main__":
     vp = [v for v in vp if v not in videos_test]
     videos_train = vp
     print(len(vp))
-
+    number = 200
+    for vid in videos_test:
+        print(vid)
+        generate_training_example(11, vid, num_per_video=number, folder="test")
+    for vid in videos_train:
+        print(vid)
+        generate_training_example(11,vid,num_per_video=number, folder="train")
+    for vid in videos_val:
+        print(vid)
+        generate_training_example(11, vid, num_per_video=number, folder="val")
 # video_path_list = get_video_list()
 # print(len(video_path_list))  # 37 videos
 # vid = array_from_video(video_path_list[0])
