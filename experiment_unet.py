@@ -35,9 +35,10 @@ class Run():
         self.batch_size = batch_size
         self.model = Simply3DUnet(num_in_channels=1, num_out_channels=1, depth=1)
         self.model = self.model.to(device)
-        self.data_train = DataLoader(FullSizeVideoDataset("./files/train"), batch_size=self.batch_size)
-        self.data_val = DataLoader(FullSizeVideoDataset("./files/val"), batch_size=self.batch_size)
-        self.data_test = DataLoader(FullSizeVideoDataset("./files/test"), batch_size=self.batch_size)
+        self.dataset = FullSizeVideoDataset
+        self.data_train = DataLoader(self.dataset("./files/train"), batch_size=self.batch_size)
+        self.data_val = DataLoader(self.dataset("./files/val"), batch_size=self.batch_size)
+        self.data_test = DataLoader(self.dataset("./files/test"), batch_size=self.batch_size)
 
         self.loss = torch.nn.MSELoss(reduction='mean')
         self.params = self.model.parameters()
@@ -60,6 +61,8 @@ class Run():
         self.model.train()
         epoch_loss = 0
         for data in tqdm(self.data_train, desc="training"):
+            if random.randint(0, 10) != 5:
+                continue
             self.optimizer.zero_grad()
             loss, otpt = self.forward(data)
             loss.backward()
@@ -75,10 +78,13 @@ class Run():
         self.model.eval()
         epoch_loss = 0
         for data in tqdm(self.data_val, desc="validating"):
-            loss, otpt = self.forward(data)
-            loss = loss.detach().cpu().numpy()
-            self.summary.add_scalar("batch_val_loss", loss, global_step=self.val_step)
-            epoch_loss += loss
+            if random.randint(0, 10) != 5:  # sam 1 na 10 izvajaj...
+                continue
+            with torch.no_grad():
+                loss, otpt = self.forward(data)
+                loss = loss.detach().cpu().numpy()
+                self.summary.add_scalar("batch_val_loss", loss, global_step=self.val_step)
+                epoch_loss += loss
         epoch_loss /= len(self.data_val)
         return epoch_loss
 
@@ -88,13 +94,15 @@ class Run():
         for i in range(no_epochs):
             tr = self.epoch_train()
             val = self.epoch_val()
-            self.summary.add_scalars({"train_loss": tr, "val_loss": val}, global_step=i)
+            self.summary.add_scalars(main_tag="losses", tag_scalar_dict={"train_loss": tr, "val_loss": val},
+                                     global_step=i)
             self.global_step += 1
 
             if val < best_val_loss:
                 with open(os.path.join(self.run_dir, "best_val.pth"), "wb") as f:
                     torch.save(self.model, f)
                     print("best val saved")
+                    best_val_loss = val
             print(f"STEP: {self.global_step} TRAINLOSS: {tr} VALLOSS {val}")
         self.summary.close()
 
@@ -102,5 +110,7 @@ class Run():
 from pprint import pprint
 
 if __name__ == "__main__":
-    r = Run(2)
-    r.train(10)
+    r = Run(2, run_name="run_run_load")
+    r.model = torch.load("/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRASOUND_MASTER/files/run_run/best_val.pth")
+    r.data_val = r.data_test
+    print(r.epoch_val())

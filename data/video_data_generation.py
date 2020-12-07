@@ -9,6 +9,7 @@ from tqdm import tqdm
 from torch.utils.data import Dataset
 
 
+
 def get_video_list():
     vlist = list()
     for root, dirs, files in os.walk(video_directory):
@@ -95,6 +96,9 @@ def generate_training_example(N: int, video, num_per_video: int, folder: str):
     return arr  # returns last arr
 
 
+
+
+
 if __name__ == "__main__":
     vp = get_video_list()
     print(len(vp))
@@ -115,6 +119,14 @@ if __name__ == "__main__":
     for vid in videos_val:
         print(vid)
         generate_training_example(11, vid, num_per_video=number, folder="val")
+
+    with open(".files/video_list.txt", "w") as f:
+        f.write("testing ")
+        f.writeline(videos_test)
+        f.write("validation ")
+        f.writelines(videos_val)
+        f.write("training ")
+        f.writelines(videos_train)
 # video_path_list = get_video_list()
 # print(len(video_path_list))  # 37 videos
 # vid = array_from_video(video_path_list[0])
