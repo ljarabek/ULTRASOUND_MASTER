@@ -57,8 +57,8 @@ class MasterGenerator():
         video_list = self.get_video_list()
         shuffle(video_list)
 
-        val_list = video_list[0:4]
-        test_list = video_list[5:9]
+        val_list = video_list[0:5]
+        test_list = video_list[5:10]
         train_list = video_list[10:len(video_list)-1]
         full_dict = {"train" : train_list, "val": val_list, "test" : test_list}
 
@@ -87,8 +87,7 @@ class GeneratorSmallCrops(MasterGenerator):
             y_bound = randint(0, video_arr.shape[1] - 32 - 1)
             # Now the boundaries for the frames
             # We have to take the frames and the stride into account
-            print(i)
-            time.sleep(1)
+
             danger_zone = N + 1
             current_frame = randint(0, video_arr.shape[0] - danger_zone)
             cropped_box = video_arr[:, y_bound:y_bound + 32, x_bound:x_bound + 32]
@@ -145,5 +144,14 @@ class GeneratorLeon(MasterGenerator):
 
 generator = GeneratorSmallCrops()
 train, val, test = generator.train_val_test_split()
-for video in train:
-    generator.generate_pickles_from_video(10,100, video, "train/")
+for i, video in enumerate(train):
+    generator.generate_pickles_from_video(30,1000, video, "train/")
+    print("Progress: ", (i+1)/len(train)*100, " %")
+print("-----------------------")
+for i, video in enumerate(val):
+    generator.generate_pickles_from_video(30,1000, video, "val/")
+    print("Progress: ", (i+1)/len(val)*100, " %")
+print("-----------------------")
+for i, video in enumerate(test):
+    generator.generate_pickles_from_video(30,1000, video, "test/")
+    print("Progress: ", (i+1)/len(test)*100, " %")

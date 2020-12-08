@@ -1,5 +1,9 @@
 .idea
 config.py
+*.avi
 /files/
 /__pycache__/
 */__pycache__/
+*.pkl
+data/files/*
+drive-download-20201205T194456Z-001
