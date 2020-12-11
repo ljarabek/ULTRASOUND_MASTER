@@ -34,12 +34,15 @@ import matplotlib.pyplot as plt
 
 
 class Run():
-    def __init__(self, batch_size, run_name="run_run", model_name="2dunet"):
+    def __init__(self, batch_size, run_name="run_run", model_name="2dunet", in_ch=10, out_ch=1):
         self.time = datetime.now()
         self.time_str = self.time.strftime("%H_%M_%S__%m_%d_%Y")
         self.run_dir = os.path.join("./files", run_name, model_name, self.time_str)
         self.batch_size = batch_size
         self.model_name = model_name
+
+        self.in_ch = in_ch
+        self.out_ch = out_ch
         self.model = self._init_model(model_name)  # 3DUNET
         self.model = self.model.to(device)
         self.dataset = FullSizeVideoDataset
@@ -48,7 +51,9 @@ class Run():
         self.data_val = DataLoader(self.dataset(self.data_root_dir + "val"), batch_size=self.batch_size)
         self.data_test = DataLoader(self.dataset(self.data_root_dir + "test"), batch_size=self.batch_size)
 
-        self.loss = torch.nn.MSELoss(reduction='mean')
+        self.loss_mse = nn.MSELoss(reduction='mean')
+        self.loss = self.INN_loss  # torch.nn.MSELoss(reduction='mean')
+
         self.params = self.model.parameters()
         self.optimizer = torch.optim.AdamW(params=self.params, lr=3e-4)
         self.summary = SummaryWriter(log_dir=os.path.join(self.run_dir, "summary"))
@@ -59,11 +64,36 @@ class Run():
     def _init_model(self, model: str):
         model = model.lower()
         if model == "3dunet":
-            return Simply3DUnet(num_in_channels=1, num_out_channels=1, depth=1)
+            return Simply3DUnet(num_in_channels=self.in_ch, num_out_channels=self.out_ch, depth=1)
         if model == "2dunet":
-            return UNet2D(in_channels=10, out_channels=1)
+            return UNet2D(in_channels=self.in_ch, out_channels=self.out_ch)
         else:
             raise NotImplementedError("Specified model %s not implemented" % model)
+
+    def INN_loss(self, otpt, target, tightness=0.5,
+                 mean_loss_weight=10, base_loss_scalar=1):  # 3 channel output - low, mid, max;; NCHWD format
+        # real format NHWD (C=1)!
+        low = otpt[:, 0]
+        mid = otpt[:, 1]
+        high = otpt[:, 2]
+
+        mid = torch.unsqueeze(mid, dim=1).to(device)  # ker potem mid uporabiš MSE
+        zero = torch.zeros_like(target).to(device)
+        # tightness = torch.tensor(tightness).to(device)
+        # mean_loss_weight = torch.tensor(mean_loss_weight).to(device)
+        # a = torch.max(torch.sub(real, high).to(device), other=zero).to(device)
+
+        loss = torch.pow(torch.max(target - high, other=zero).to(device), exponent=2).to(device) + \
+               torch.pow(torch.max(low - target, zero), 2)
+        loss *= base_loss_scalar
+        #print("Lol")
+        #print(loss.mean())
+        loss += tightness * (high - low)
+        #print(loss.mean())
+        loss += mean_loss_weight * self.loss_mse(mid.double(), target.double())
+        #print(loss.mean())
+        loss = loss.mean()
+        return loss
 
     def forward(self, input):
         input = input.to(device)
@@ -106,11 +136,11 @@ class Run():
         epoch_loss /= len(self.data_val)
         return epoch_loss
 
-    def output_video_pred_from_batches(self):
+    def output_video_pred_from_batches(self,
+                                       dataset_folder="/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRASOUND_MASTER/files/video_by_batches/733559875663173601",
+                                       output_folder="/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRASOUND_MASTER/files/video_by_batches_output"):
         self.model.eval()
-        loader = DataLoader(self.dataset(
-            "/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRASOUND_MASTER/files/video_by_batches/733559875663173601"),
-            batch_size=8)
+        loader = DataLoader(self.dataset(dataset_folder), batch_size=8)
         frame = 10
         for i, data in tqdm(enumerate(loader)):
             loss, otpt = self.forward(data)
@@ -118,10 +148,7 @@ class Run():
             batches = otpt.shape[0]
             for b in range(batches):
                 output = otpt[b, 0]
-                with open(os.path.join(
-                        "/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRASOUND_MASTER/files/video_by_batches_output",
-                        str(frame)),
-                        "wb") as f:
+                with open(os.path.join(output_folder, str(frame)), "wb") as f:
                     pickle.dump(output, f)
                     frame += 1
             #
@@ -148,10 +175,16 @@ class Run():
 from pprint import pprint
 
 if __name__ == "__main__":
+    r = Run(8, "run_2dunet_INN", "2dunet", in_ch=10, out_ch=3)
+    #r.train(35)
+    r.model =
+
+    """
+    TO TEST: 
     r = Run(8, run_name="run_run_eval", model_name="2DUnet")
     r.model = torch.load(
         "/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRASOUND_MASTER/files/run_run/2DUnet/11_37_48__12_11_2020/best_val.pth")
-    r.output_video_pred_from_batches()
+    r.output_video_pred_from_batches()"""
     # r.train(15)
 
     # r.model = torch.load("/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRASOUND_MASTER/files/run_run/best_val.pth")
