@@ -9,7 +9,6 @@ from tqdm import tqdm
 from torch.utils.data import Dataset
 
 
-
 def get_video_list():
     vlist = list()
     for root, dirs, files in os.walk(video_directory):
@@ -95,12 +94,52 @@ def generate_training_example(N: int, video, num_per_video: int, folder: str):
 
     return arr  # returns last arr
 
+def arr_from_video_cropped_normalised(video):
+    video_arr = array_from_video(video)
+    video_arr = np.array(video_arr[:, 15:-25, 165:475, 0], dtype=np.float)
+    video_len = video_arr.shape[0]
+    video_arr -= mean
+    video_arr /= std
+    return video_arr
 
+def video_to_batches(N: int, video="/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRAZVOK_old/TEST_VIDEJO.AVI",
+                     folder="/media/leon/2tbssd/ULTRAZVOK_COLLAB/ULTRASOUND_MASTER/files/video_by_batches"):
+    """
+    :param N: number of frames for training
+    :param video: list of videos to choose from or specific one
+    :return: N normalised consecutive frames from random time in random video
+    """
+    folder = os.path.join(folder, str(hash(video))[1:])
+    os.makedirs(folder, exist_ok=True)
+    arr = None
 
+    if type(video) == list:
+        video_choice = rand.choice(video)
+    else:
+        video_choice = video
+    video_arr = array_from_video(video_choice)
+    print(video_arr.shape)
+    video_arr = np.array(video_arr[:, 15:-25, 165:475, 0], dtype=np.float)
+    video_len = video_arr.shape[0]
+    video_arr -= mean
+    video_arr /= std
+
+    for i in tqdm(range(video_len - N)):
+        N0 = i
+        arr = video_arr[N0:N0 + N]
+        fname = str(hash(video_choice))[1:] + "_" + str(i)
+        with open(os.path.join(folder, fname), "wb") as f:
+            pickle.dump(arr, f)
+
+    return arr  # returns last arr
 
 
 if __name__ == "__main__":
-    vp = get_video_list()
+
+    video_to_batches(11)
+
+
+    """vp = get_video_list()
     print(len(vp))
     videos_val = rand.sample(vp, no_val_videos)
     vp = [v for v in vp if v not in videos_val]
@@ -115,7 +154,7 @@ if __name__ == "__main__":
         generate_training_example(11, vid, num_per_video=number, folder="test")
     for vid in videos_train:
         print(vid)
-        generate_training_example(11,vid,num_per_video=number, folder="train")
+        generate_training_example(11, vid, num_per_video=number, folder="train")
     for vid in videos_val:
         print(vid)
         generate_training_example(11, vid, num_per_video=number, folder="val")
@@ -126,10 +165,5 @@ if __name__ == "__main__":
         f.write("validation ")
         f.writelines(videos_val)
         f.write("training ")
-        f.writelines(videos_train)
-# video_path_list = get_video_list()
-# print(len(video_path_list))  # 37 videos
-# vid = array_from_video(video_path_list[0])
-# sample_frame = vid[500]
-# plt.imshow(sample_frame[15:-25, 165:475, 0])  # cviknemo prvih pa zadnih 25 pixlov, izberemo en kanal
-# plt.show()
+        f.writelines(videos_train)"""
+
