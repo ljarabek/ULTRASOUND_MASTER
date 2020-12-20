@@ -6,7 +6,9 @@ import random
 import re
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 from timeit import default_timer as timer
+import matplotlib.pyplot as plt 
 from generator import *
 
 
@@ -27,7 +29,7 @@ print (number_files)
 # In[4]:
 
 
-batch_size = 8
+batch_size = 16
 epochs = 3
 train_steps = round(number_files/batch_size)
 train_steps
@@ -39,8 +41,8 @@ train_steps
 # In[6]:
 
 
-train_generator = batch_generator(train_path, batch_size=batch_size)
-val_generator = batch_generator(val_path, batch_size=batch_size)
+train_generator = generator(train_path)
+val_generator = generator(val_path)
 
 
 # In[7]:
@@ -69,24 +71,23 @@ class Autoencoder(Model):
         self.encoder = Sequential([
             Input(shape=(30,32,32)),
             Lambda(lambda x: tf.expand_dims(x,axis=4)),
-            TimeDistributed(Conv2D(16,(3,3),padding='SAME')),
+            TimeDistributed(Conv2D(32,(3,3),padding='SAME')),
             LayerNormalization(),
-            ConvLSTM2D(128, (3,3), strides = (1,1),padding='SAME', return_sequences=True),
+            ConvLSTM2D(64, (3,3), strides = (1,1),padding='SAME', return_sequences=True),
             LayerNormalization(),
-            ConvLSTM2D(8, (3,3), strides = (1,1),padding='SAME', return_sequences=True)
+            ConvLSTM2D(128, (3,3), strides = (1,1),padding='SAME', return_sequences=True)
         ], name = 'Encoder')
         self.decoder = Sequential([
-            TimeDistributed(Conv2DTranspose(32,(3,3),padding="same")),
+            TimeDistributed(Conv2DTranspose(64,(3,3),padding="SAME")),
             LayerNormalization(),
             TimeDistributed(Conv2DTranspose(1,(3,3),activation='sigmoid',padding="same"))
         ], name = 'Decoder')        
     def call(self,x):
         encoded = self.encoder(x)
         return self.decoder(encoded)
-with strategy.scope():
-    model = Autoencoder()
-    model.compile(optimizer='adam',loss='mse')
-model.build((64, 30, 32, 32))
+model = Autoencoder()
+model.compile(optimizer='adam',loss='mse')
+model.build((batch_size, 30, 32, 32))
 model.summary()
 
 
@@ -103,14 +104,14 @@ class BatchLogger(Callback):
     def on_train_batch_end(self,batch,logs=None):
         print("\nEnd of batch: {} \nLoss: {} \nTime needed: {}".format(batch, logs['loss'], timer()-self.starting_time))
 
-early_stopper = EarlyStopping(monitor='val_loss',patience=3, min_delta=0.001)
+early_stopper = EarlyStopping(monitor='val_loss',patience=3, min_delta=0.01)
 reduce_lr = ReduceLROnPlateau(monitor='loss',patience=2, cooldown=1)
 store_best = ModelCheckpoint(filepath = filepath, 
                              monitor = 'val_accuracy', 
                              save_best_only=True,
                              save_freq = 'epoch')
 
-callbacks = [reduce_lr, BatchLogger()]
+callbacks = [store_best, early_stopper, reduce_lr, BatchLogger()]
 
 
 # In[ ]:
@@ -120,6 +121,12 @@ history = model.fit(train_generator, validation_data = val_generator, steps_per_
 
 
 # In[ ]:
-
-
+results = pd.DataFrame(history.history)
+plt.plot(results['loss'])
+plt.plot(results['val_loss'])
+plt.title('Loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'validation'], loc='upper left')
+plt.show()
 
