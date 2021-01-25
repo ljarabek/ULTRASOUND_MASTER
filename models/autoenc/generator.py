@@ -4,9 +4,7 @@ import random
 import re
 import numpy as np
 import tensorflow as tf
-
-
-
+from config import *
 
 def generator(filepath):
     for _, _, files in os.walk(filepath):
@@ -35,4 +33,19 @@ def numpy_generator(filepath):
                     yield arr,arr
             except StopIteration:
                 break;
+
+def vis_gen(filepath):
+    for _, _, files in os.walk(filepath):
+        for file in files:
+            try:
+                pattern = r"metadata"
+                if re.search(pattern, file):
+                    continue
+                p = filepath+file
+                with open(p, "rb") as f:
+                    arr = np.array(pickle.load(f))
+                    yield arr,arr, p
+            except StopIteration:
+                break;
+            except tf.errors.OutOfRangeError: continue
 
