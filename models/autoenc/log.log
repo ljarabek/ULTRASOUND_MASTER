@@ -1,0 +1,12 @@
+tensorflow - WARNING - There are non-GPU devices in `tf.distribute.Strategy`, not using nccl allreduce.
+tensorflow - INFO - Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:CPU:0',)
+tensorflow - WARNING - Gradients do not exist for variables ['conv_lst_m2d/kernel:0', 'conv_lst_m2d/recurrent_kernel:0', 'conv_lst_m2d/bias:0', 'conv_lst_m2d_1/kernel:0', 'conv_lst_m2d_1/recurrent_kernel:0', 'conv_lst_m2d_1/bias:0'] when minimizing the loss.
+tensorflow - WARNING - Gradients do not exist for variables ['conv_lst_m2d/kernel:0', 'conv_lst_m2d/recurrent_kernel:0', 'conv_lst_m2d/bias:0', 'conv_lst_m2d_1/kernel:0', 'conv_lst_m2d_1/recurrent_kernel:0', 'conv_lst_m2d_1/bias:0'] when minimizing the loss.
+tensorflow - WARNING - There are non-GPU devices in `tf.distribute.Strategy`, not using nccl allreduce.
+tensorflow - INFO - Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:CPU:0',)
+tensorflow - WARNING - Gradients do not exist for variables ['conv_lst_m2d/kernel:0', 'conv_lst_m2d/recurrent_kernel:0', 'conv_lst_m2d/bias:0', 'conv_lst_m2d_1/kernel:0', 'conv_lst_m2d_1/recurrent_kernel:0', 'conv_lst_m2d_1/bias:0'] when minimizing the loss.
+tensorflow - WARNING - Gradients do not exist for variables ['conv_lst_m2d/kernel:0', 'conv_lst_m2d/recurrent_kernel:0', 'conv_lst_m2d/bias:0', 'conv_lst_m2d_1/kernel:0', 'conv_lst_m2d_1/recurrent_kernel:0', 'conv_lst_m2d_1/bias:0'] when minimizing the loss.
+tensorflow - WARNING - There are non-GPU devices in `tf.distribute.Strategy`, not using nccl allreduce.
+tensorflow - INFO - Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:CPU:0',)
+tensorflow - WARNING - Gradients do not exist for variables ['conv_lst_m2d/kernel:0', 'conv_lst_m2d/recurrent_kernel:0', 'conv_lst_m2d/bias:0', 'conv_lst_m2d_1/kernel:0', 'conv_lst_m2d_1/recurrent_kernel:0', 'conv_lst_m2d_1/bias:0'] when minimizing the loss.
+tensorflow - WARNING - Gradients do not exist for variables ['conv_lst_m2d/kernel:0', 'conv_lst_m2d/recurrent_kernel:0', 'conv_lst_m2d/bias:0', 'conv_lst_m2d_1/kernel:0', 'conv_lst_m2d_1/recurrent_kernel:0', 'conv_lst_m2d_1/bias:0'] when minimizing the loss.
