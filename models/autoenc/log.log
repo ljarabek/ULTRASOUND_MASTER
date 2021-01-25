@@ -1,0 +1,2 @@
+tensorflow - WARNING - There are non-GPU devices in `tf.distribute.Strategy`, not using nccl allreduce.
+tensorflow - INFO - Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:CPU:0',)

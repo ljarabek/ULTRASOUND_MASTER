@@ -10,11 +10,13 @@ from random import shuffle
 import pickle
 import pprint
 from datetime import datetime
+from tqdm import tqdm
 seed(14)
 
 # In order to generate training examples, you need to create a "files" folder in ULTRASOUND_MASTER folder!!!
 # reports folder contains train_test_split video names 
 
+# Če hočemo dat 16 frameov, specificiraj 16+1, da bo 17 za primerjavo!
 
 class MasterGenerator():
 
@@ -102,6 +104,43 @@ class GeneratorSmallCrops(MasterGenerator):
                 final_array.append(cropped_box[current_frame])
                 current_frame += 1
 
+            filename = str(hash(video + str(i))) + ".pkl"
+            with open(os.path.join(self.video_directory, folder, filename), "wb") as file:
+                pickle.dump(final_array, file)
+
+            with open(os.path.join(self.video_directory, folder, (filename + "_metadata.pkl")), "wb") as file:
+                pickle.dump(metadata, file)
+
+class GeneratorSmallCropsDIFF(MasterGenerator):
+    def __init__(self):
+        super(GeneratorSmallCropDIFF, self).__init__()
+
+    def generate_pickles_from_video(self, N: int,num_per_video: int, video, folder: str):
+        video_arr = self.array_from_video(video)
+        # video dims: 0 - len, 1 - height, 2 - width
+        for i in range(num_per_video):
+            # Create a temporary placeholder
+            final_array = list()
+
+            # Boundaries for top left coordinates
+            x_bound = randint(1, video_arr.shape[2] - 32 - 1)
+            y_bound = randint(1, video_arr.shape[1] - 32 - 1)
+
+            # Now the boundaries for the frames
+            danger_zone = N + 1
+            current_frame = randint(0, video_arr.shape[0] - danger_zone)
+            cropped_box = video_arr[:, y_bound:y_bound + 32, x_bound:x_bound + 32]
+
+            metadata = dict()
+            metadata["videofile"] = video
+            metadata["x_bound"] = x_bound
+            metadata["y_bound"] = y_bound
+            metadata["starting_frame"] = current_frame
+
+            for j in range(N):
+                final_array.append(cropped_box[current_frame] - cropped_box[current_frame-1])
+                current_frame += 1
+
             filename = str(hash(video + str(i)))
             with open(os.path.join("./files/", folder, filename), "wb") as file:
                 pickle.dump(final_array, file)
@@ -144,14 +183,9 @@ class GeneratorLeon(MasterGenerator):
 
 generator = GeneratorSmallCrops()
 train, val, test = generator.train_val_test_split()
-for i, video in enumerate(train):
-    generator.generate_pickles_from_video(30,1000, video, "train/")
-    print("Progress: ", (i+1)/len(train)*100, " %")
-print("-----------------------")
-for i, video in enumerate(val):
-    generator.generate_pickles_from_video(30,1000, video, "val/")
-    print("Progress: ", (i+1)/len(val)*100, " %")
-print("-----------------------")
-for i, video in enumerate(test):
-    generator.generate_pickles_from_video(30,1000, video, "test/")
-    print("Progress: ", (i+1)/len(test)*100, " %")
+for video in tqdm(train):
+    generator.generate_pickles_from_video(30,2000, video, "train/")
+for video in tqdm(val):
+    generator.generate_pickles_from_video(30,2000, video, "val/")
+for video in tqdm(test):
+    generator.generate_pickles_from_video(30,2000, video, "test/")

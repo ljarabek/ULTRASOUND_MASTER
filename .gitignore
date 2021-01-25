@@ -8,3 +8,5 @@ config.py
 data/files/*
 data/reports
 drive-download-20201205T194456Z-001
+*.hdf5
+*.pb
